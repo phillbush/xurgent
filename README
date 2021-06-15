@@ -1,0 +1,87 @@
+XURGENT(1)                  General Commands Manual                 XURGENT(1)
+
+
+
+NAME
+       xurgent - set window urgency
+
+SYNOPSIS
+       xurgent [-eiu] wid
+
+DESCRIPTION
+       xurgent sets either the UrgencyHint flag on the WMHints property or the
+       _NET_WM_STATE_DEMANDS_ATTENTION state on the _NET_WM_STATE property of
+       the window with the given window id (wid).  wid can be in decimal or in
+       hex (if prefixed by 0x or 0X).  By default only the UrgencyHint on the
+       WMHints property is set.
+
+       The options are as follows:
+
+       -e     Change the _NET_WM_STATE property (as specified by the EWMH).
+
+       -i     Change the WMHints property (as specified by the ICCCM).
+
+       -u     Unset urgency/attention rather then set it.
+
+ENVIRONMENT
+       The following environment variables affect the execution of xurgent
+
+       DISPLAY
+              The display the window is on.
+
+INSTALLATION
+       To build xurgent, run the following command.
+
+              $ cc -I/usr/X11R6/include -L/usr/X11R6/lib -o xurgent xurgent.c -lX11
+
+       To install xurgent, copy the binary to somewhere in $PATH
+
+SEE ALSO
+       xclimsg(1)
+
+       https://www.x.org/releases/current/doc/xorg-docs/icccm/icccm.html
+
+       https://specifications.freedesktop.org/wm-spec/wm-spec-latest.html
+
+BUGS
+       There are two semantically related states a window can have: it can
+       be urgent or it can demands attention.  The urgency is set by the
+       UrgencyHint in the WMHints property (as specified by ICCCM, the
+       Inter-Client Communication Conventions Manual).  The demand-attention
+       state is set by the _NET_WM_STATE_DEMANDS_ATTENTION in the
+       _NET_WM_STATE property (as specified by EWMH, the Extended Window
+       Manager Hints).  The semantic difference between a urgent window and a
+       window that demands attention is not clear.
+
+       The ICCCM says:
+
+              The UrgencyHint flag, if set in the flags field, indicates that
+              the client deems the window contents to be urgent, requiring the
+              timely response of the user.  The window manager must make some
+              effort to draw the user's attention to this window while this
+              flag is set.  The window manager must also monitor the state of
+              this flag for the entire time the window is in the Normal or
+              Iconic state and must take appropriate action when the state of
+              the flag changes.  The flag is otherwise independent of the
+              window's state; in particular, the window manager is not
+              required to deiconify the window if the client sets the flag on
+              an Iconic window.  Clients must provide some means by which the
+              user can cause the UrgencyHint flag to be set to zero or the
+              window to be withdrawn.  The user's action can either mitigate
+              the actual condition that made the window urgent, or it can
+              merely shut off the alarm.
+
+       The EWMH says:
+
+              _NET_WM_STATE_DEMANDS_ATTENTION indicates that some action in or
+              with the window happened.  For example, it may be set by the
+              Window Manager if the window requested activation but the Window
+              Manager refused it, or the application may set it if it finished
+              some work.  This state may be set by both the Client and the
+              Window Manager.  It should be unset by the Window Manager when it
+              decides the window got the required attention (usually, that it
+              got activated).
+
+
+
+                                                                    XURGENT(1)
