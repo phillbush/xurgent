@@ -2,58 +2,66 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 
 #define DIRECT_USER_ACTION 2
 
-enum {
-	_NET_WM_STATE_REMOVE = 0,   /* remove/unset property */
-	_NET_WM_STATE_ADD    = 1,   /* add/set property */
-};
-
-static Display *dpy; 
+static Display *display;
 
 static void
 usage(void)
 {
-	fprintf(stderr, "usage: xurgent [-eiu] wid\n");
-	exit(1);
+	(void)fprintf(stderr, "usage: xurgent [-eiu] wid\n");
+	exit(EXIT_FAILURE);
+}
+
+static Atom
+getatom(const char *atomname)
+{
+	return XInternAtom(display, atomname, False);
 }
 
 static void
-urgency(Window win, int set)
+urgency(Window window, int set)
 {
-	XWMHints hints = {
-		.flags = (set ? XUrgencyHint : 0)
-	};
-
-	XSetWMHints(dpy, win, &hints);
+	XSetWMHints(
+		display,
+		window,
+		&(XWMHints){
+			.flags = (set ? XUrgencyHint : 0)
+		}
+	);
 }
 
 static void
-attention(Window win, int set)
+attention(Window window, int set)
 {
-	XEvent ev = {
-		.xclient.type = ClientMessage,
-		.xclient.format = 32,
-		.xclient.send_event = True,
-		.xclient.serial = 0,
-		.xclient.window = win,
-		.xclient.message_type = XInternAtom(dpy, "_NET_WM_STATE", False),
-		.xclient.data.l[0] = (set ? _NET_WM_STATE_ADD : _NET_WM_STATE_REMOVE),
-		.xclient.data.l[1] = XInternAtom(dpy, "_NET_WM_STATE_DEMANDS_ATTENTION", False),
-		.xclient.data.l[2] = None,
-		.xclient.data.l[3] = DIRECT_USER_ACTION,
-	};
-
-	XSendEvent(dpy, DefaultRootWindow(dpy), False, SubstructureRedirectMask | SubstructureNotifyMask, &ev);
+	XSendEvent(
+		display,
+		DefaultRootWindow(display),
+		False,
+		SubstructureRedirectMask | SubstructureNotifyMask,
+		(XEvent *)&(XClientMessageEvent){
+			.type = ClientMessage,
+			.format = 32,
+			.send_event = True,
+			.serial = 0,
+			.window = window,
+			.message_type = getatom("_NET_WM_STATE"),
+			.data.l[0] = set,
+			.data.l[1] = getatom("_NET_WM_STATE_DEMANDS_ATTENTION"),
+			.data.l[2] = None,
+			.data.l[3] = DIRECT_USER_ACTION,
+		}
+	);
 }
 
 int
 main(int argc, char *argv[])
 {
-	Window win;
+	Window window;
 	int eflag, iflag, unset;
 	int ch;
 
@@ -78,16 +86,16 @@ main(int argc, char *argv[])
 	argv += optind;
 	if (argc != 1)
 		usage();
-	win = strtoul(argv[0], NULL, 0);
+	window = strtoul(argv[0], NULL, 0);
 	if (!eflag && !iflag)
 		iflag = 1;
-	if (!(dpy = XOpenDisplay(NULL)) )
-		errx(1, "Could not open display");
+	if ((display = XOpenDisplay(NULL)) == NULL)
+		errx(EXIT_FAILURE, "Could not open display");
 	if (iflag)
-		urgency(win, !unset);
+		urgency(window, !unset);
 	if (eflag)
-		attention(win, !unset);
-	XFlush(dpy);
-	XCloseDisplay(dpy);
-	return 0;
+		attention(window, !unset);
+	XFlush(display);
+	XCloseDisplay(display);
+	return EXIT_SUCCESS;
 }
